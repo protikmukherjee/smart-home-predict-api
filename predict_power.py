@@ -1,9 +1,23 @@
-# predict_power.py
-import sys, json, joblib
+import os
+import joblib
 import pandas as pd
+import sys, json
+import requests
 from datetime import datetime
 
-model = joblib.load("power_model_new.joblib")
+MODEL_PATH = "power_model_new.joblib"
+GDRIVE_FILE_ID = "1B9aZ3N5iAz11qAeh7Pf-BKW_iApltN-C"
+DOWNLOAD_URL = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
+
+# Download model if missing
+if not os.path.exists(MODEL_PATH):
+    print("Downloading power model from Google Drive...")
+    r = requests.get(DOWNLOAD_URL)
+    with open(MODEL_PATH, "wb") as f:
+        f.write(r.content)
+
+model = joblib.load(MODEL_PATH)
+
 input_data = json.load(sys.stdin)
 
 features = {
@@ -28,5 +42,4 @@ features = {
 
 X = pd.DataFrame([features])
 predicted_power = model.predict(X)[0]
-
 print(f"{predicted_power:.2f}")
