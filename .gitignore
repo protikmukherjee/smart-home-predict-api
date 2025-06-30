@@ -1,7 +1,5 @@
 __pycache__/
 *.pyc
-*.pkl
-*.joblib
 node_modules/
 *.log
 logs/
