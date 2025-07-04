@@ -96,7 +96,7 @@ app.post("/recommend", async (req, res) => {
 
         // === Alert 1: Fire Risk ===
         const alert1 = fireProb > 0.4
-            ? "[ALERT] Fire System: High probability of fire detected. Buzzer activated. Check immediately."
+            ? "[ALERT] Fire System: High probability of fire detected. Check immediately."
             : "[INFO] Fire System: No significant fire risk detected.";
         await db.ref("/SmartHomeSystem/Alerts/Alert1").set(alert1);
 
