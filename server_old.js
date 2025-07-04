@@ -94,13 +94,13 @@ app.post("/recommend", async (req, res) => {
         const occResult = await runPython("predict_occupancy.py", input);
         const occupancy = parseFloat(occResult);
 
-        // === Alert 1: Fire risk ===
+        // === Alert 1: Fire Risk ===
         const alert1 = fireProb > 0.4
-            ? "HIGH Monitor Fire System"
-            : "LOW No action needed for the fire system";
+            ? "[ALERT] Fire System: High probability of fire detected. Buzzer activated. Check immediately."
+            : "[INFO] Fire System: No significant fire risk detected.";
         await db.ref("/SmartHomeSystem/Alerts/Alert1").set(alert1);
 
-        // === Alert 2: Lights on during daytime ===
+        // === Alert 2: Lights on During Daytime ===
         let roomsLit = [];
         if (hour >= 8 && hour <= 18) {
             if (input.r1_light || input.Light1_status) roomsLit.push("Room 1");
@@ -108,25 +108,27 @@ app.post("/recommend", async (req, res) => {
             if (input.r3_light || input.Light3_status) roomsLit.push("Room 3");
         }
         const alert2 = roomsLit.length
-            ? `${roomsLit.join(" and/or ")} lights during daytime may push total power above limit.`
-            : "";
+            ? `[WARNING] Lighting System: ${roomsLit.join(" and/or ")} lights are on during daytime. May exceed power limits.`
+            : "[INFO] Lighting System: No unnecessary lights detected during daytime.";
         await db.ref("/SmartHomeSystem/Alerts/Alert2").set(alert2);
 
-        // === Alert 3: Garage idle but power draw ===
+        // === Alert 3: Garage Idle ===
         const garageIdle = !input.garage_motion && input.power_mW > 400;
         const alert3 = garageIdle
-            ? "Garage system has been idle for a while. Consider turning it off."
-            : "";
+            ? "[WARNING] Garage System: Garage has been idle for a while but still drawing power. Consider turning it off."
+            : "[INFO] Garage System: No unnecessary power detected.";
         await db.ref("/SmartHomeSystem/Alerts/Alert3").set(alert3);
 
-        // === Alert 4: Smart usage tip ===
+        // === Alert 4: Smart Usage Recommendation ===
         let alert4 = "";
         const totalMotion = (input.r1_motion || 0) + (input.r2_motion || 0) + (input.r3_motion || 0) + (input.motion_detected ? 1 : 0);
 
         if (totalPower > 2000 && totalMotion === 0) {
-            alert4 = "Power usage is high but no motion detected. Some systems may be unnecessarily active.";
+            alert4 = "[RECOMMENDATION] Overall System: High power usage detected but no motion. Check and turn off unused systems.";
         } else if ((input.r3_motion || 0) === 0 && (input.r3_light || input.Light3_status)) {
-            alert4 = "No one is using kitchen (Room 3), consider turning appliances off.";
+            alert4 = "[RECOMMENDATION] Kitchen (Room 3): No one detected in kitchen but appliances are active. Consider turning them off.";
+        } else {
+            alert4 = "[INFO] System: No specific recommendations at this time.";
         }
 
         await db.ref("/SmartHomeSystem/Alerts/Alert4").set(alert4);
@@ -140,12 +142,12 @@ app.post("/recommend", async (req, res) => {
         });
 
     } catch (err) {
-        console.error("\ud83d\udea8 Recommendation error:", err);
+        console.error("🚨 Recommendation error:", err);
         res.status(500).send("Error generating recommendation");
     }
 });
 
 // === Start Server ===
 app.listen(3000, () => {
-    console.log("\ud83d\ude80 Server running on http://localhost:3000");
+    console.log("🚀 Server running on http://localhost:3000");
 });
